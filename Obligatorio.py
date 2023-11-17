@@ -57,6 +57,68 @@ class Team:
     def asignar_auto(self, auto):
         self._auto = auto
 
+def obtener_datos_empleados():
+    id, nombre, nacionalidad = int(input("\nIngrese ID: ", int)), input("Ingrese nombre: ", str), input("Ingrese nacionalidad: ", str)
+    edad, fecha_nacimiento = int(input("Ingrese edad: ", int)), ""
+    while True:
+        fecha_nacimiento = input("Ingrese fecha de nacimiento (DD-MM-YYYY): ")
+        try:
+            datatime.strptime(fecha_nacimiento, Employee.Formato_fecha)
+        except ValueError: 
+            print(f"La fecha '{fecha_nacimiento}' no tiene el formato correcto.")
+        else:
+            break
+    salario, score = input("Ingrese salario", float), input("Ingrese score", int)
+    numero_auto, puntaje_campeonato = input("Ingrese numero de auto ", int), input("Ingrese puntaje campeonato: ", int)
+    lesionado_input = ""
+    while lesionado_input not in ["si", "no"]:
+        lesionado_input = input("¿Esta lesionado? (Si/No): ").lower().strip()
+    lesionado = lesionado_input == "si"
+    return id, nombre, nacionalidad, edad, fecha_nacimiento, salario, score, numero_auto, puntaje_campeonato, lesionado
 
+def valida_opcion(minimo, maximo):
+    while True:
+        try:
+            opcion = int(input(f"\nSeleccione una opcion ({minimo} - {maximo}): "))
+            if minimo <= opcion <= maximo: return opcion
+            else:
+                print(f"Ingrese una opcion entre {minimo} y {maximo}.")
+        except ValueError: 
+            print("Ingrese un numero valido.")
+            
+def input_validado(mensaje, tipo):
+    while True:
+        valor = input(mensaje)
+        try:
+            if tipo == int: return int(valor)
+            elif tipo == float: return float(valor)
+            elif tipo == str and valor: return valor.strip()
+            else:
+                print("Valor invalido. Ingrese uno de nuevo.")
+        except ValueError:
+            print("Valor invalido. Ingrese uno de nuevo.")
 
+def generar_imprevistos_aleatorios():
+    imprevisto = Unforeseen()
+    if random.random() < 0.10: imprevisto._lesion = True
+    if random.random() < 0.05: imprevisto._abandono = True
+    imprevisto._error_pits, imprevisto._penalizacion = random.randint(0, 3), random.randint(0, 2)
+    return imprevisto
 
+def simular_carrera(autos, equipos):
+    pilotos = [p for e in equipos for p in e._pilotos if p._lesion is False] or [p for e in equipos for p in e._pilotos]
+    if not pilotos or not autos: print("No hay pilotos ni autos suficientes para simular la carrera."); return
+    imprevistos_pilotos = {p._id: generar_imprevistos_aleatorios() for p in pilotos}
+    print("\nSimulacion...\n")
+    resultados = [(p._nombre, 0) if imprevistos_pilotos[p._id]._abandono else (p._nombre, 10 + autos[0]._score + p._score - 5 * imprevistos_pilotos[p._id]._error_pits - 8 * imprevistos_pilotos[p._id]._penalizacion) for p in pilotos]
+    resultados.sort(key=lambda x: x[1], reverse=True)
+    print("Resultados de la carrera: ")
+    puntos = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+    for i, (nombre, score) in enumerate(resultados, 1):
+        if i <= len(puntos): print(f"{i}. {nombre} - Score: {score:.2f} - Puntos Obtenidos: {puntos[i-1]}")
+        else:
+            print(f"{i}. {nombre} -Score: {score:.2f}")
+
+def ralizar_consultas(equipos):
+    while True:
+        pass
