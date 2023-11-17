@@ -1,4 +1,4 @@
-from datatime import datatime
+from datetime import datetime
 import random
 
 #Simulacion de la carrera
@@ -11,7 +11,7 @@ class Employee():
     def __init__(self, id, nombre, nacionalidad, salario, cargo, fecha_nacimiento, score ) -> None:
         self._id, self._nombre, self._fecha_nacimiento, self._nacionalidad = id, nombre, fecha_nacimiento, nacionalidad
         self._salario, self._cargo, self._score = salario, cargo, score
-        try: datatime.strptime(fecha_nacimiento, self._formato_fecha)
+        try: datetime.strptime(fecha_nacimiento, self._formato_fecha)
         except ValueError: raise ValueError(f"La fecha {fecha_nacimiento} no tiene el formato correcto. Debe ser DD-MM-YYYY")
 
 class pilot(Employee):
@@ -63,7 +63,7 @@ def obtener_datos_empleados():
     while True:
         fecha_nacimiento = input("Ingrese fecha de nacimiento (DD-MM-YYYY): ")
         try:
-            datatime.strptime(fecha_nacimiento, Employee.Formato_fecha)
+            datetime.strptime(fecha_nacimiento, Employee.Formato_fecha)
         except ValueError: 
             print(f"La fecha '{fecha_nacimiento}' no tiene el formato correcto.")
         else:
@@ -121,4 +121,65 @@ def simular_carrera(autos, equipos):
 
 def ralizar_consultas(equipos):
     while True:
-        pass
+        print("\nSeleccione una opcion.")
+        print("1. Top 10 pilotos con mas puntos en el campeonato.")
+        print("2. Resumen campeonato de constructores (equipos).")
+        print("3. Top 5 pilotos mejor pagados.")
+        print("4. Top 3 pilotos mas habilidosos.")
+        print("5. Retornar jefes de equipo.")
+        print("6. Volver al menu principal.")
+        opcion = valida_opcion(1, 6)
+        if opcion == 1: print("\nTop 10 pilotos con mas puntos en el campeonato: "), [print(f"{p._nombre} - {p._puntaje_campeonato} puntos") for p in sorted([p for e in equipos for p in e._pilotos], key=lambda x: x._puntaje_campeonato, reverse=True)[:10]]
+        elif opcion == 2: print("\nResumen campeonato de constructores (equipos): "), [print(f"{e._nombre} - {sum([p._puntaje_campeonato for p in e._pilotos])} puntos") for e in equipos]
+        elif opcion == 3: print("\nTop 5 pilotos mejor pagados: "), [print(f"{p._nombre} - ${p._salario:.2f}") for p in sorted ([p for e in equipos for p in e._pilotos], key=lambda x: x._salario, reverse=True)[:5]]
+        elif opcion == 4: print("\nTop 3 pilotos mas habilidosos: "), [print(f"{p._nombre} - Score: {p._score}") for p in sorted ([p for e in equipos for p in e._pilotos], key=lambda x: x._score, reverse=True)[:3]]
+        elif opcion == 5: print("\nJefes de equipo: "), [print(director.nombre) for director in [e for e in [empleado for equipo in equipos for empleado in equipos._empleados if isinstance(empleado, Team_Manager)] if e]]
+        elif opcion == 6: break
+        
+def main():
+    equipos, autos =[], []
+    while True:
+        print("1. Alta de empleado.")
+        print("2. Alta de auto.")
+        print("3. Alta de equipo.")
+        print("4. Simular carrera.")
+        print("5. Realizar consultas.")
+        print("6. Finalizar programa.")
+        opcion = valida_opcion(1, 6)
+        if opcion == 1:
+            while True:
+                tiempo_empleado = input("\nSeleccione el tipo de empleado (Piloto/Mecanico/Director) o 'Salir' para volver al menu principal: ").lower().strip()
+                if tiempo_empleado not in ["Piloto", "Mecanico", "Director", "Salir"]:
+                    print("Opcion invalida. Intente de nuevo."); continue
+                elif tiempo_empleado == "Salir": break
+                id, nombre, edad, nacionalidad, fecha_nacimiento, salario, score, numero_auto, puntaje_campeonato, lesion = obtener_datos_empleados()
+                if tiempo_empleado == "Piloto":
+                    numero_auto, puntaje_campeonato, lesion = input_validado("Ingrese numero auto: ", int), input_validado("Ingrese puntaje campeonato: ", int), input_validado("¿Esta lesionado? (si/no): ", str).lower() == "si"
+                    empleado = pilot(id, nombre, edad, nacionalidad, fecha_nacimiento, salario, score, numero_auto, puntaje_campeonato, lesion)
+                elif tiempo_empleado == "Mecanico": empleado = Mechanic(id, nombre, edad, nacionalidad, fecha_nacimiento, salario, score)
+                elif tiempo_empleado == "Director": empleado = Team_Manager(id, nombre, edad, nacionalidad, fecha_nacimiento, salario)
+                else:
+                    print("Tipo de empleado no valido."); continue
+                while True:
+                    equipo_asociado = input_validado(f"Ingrese el nombre del equipo al que pertenece el {tiempo_empleado}: ", str)
+                    equipo_encontrado = next((e for e in equipos if e._nombre.lower() == equipo_asociado.lower()), None)
+                    if equipo_encontrado: equipo_encontrado.agregar_empleado(empleado); print(f"\n{tiempo_empleado.capitalize()} agregando al equipo {equipo_asociado}."); break
+                    else:
+                        decision = ""
+                        while decision not in ["si", "no"]:
+                            decision = input_validado(f"No se encontro al equipo {equipo_asociado}. Desea crear el equipo {equipo_asociado}? (si/no): ", str).lower().strip()
+                        if decision == "si":
+                            pais_orgien, año_creacion = input_validado("Ingrese pais origen: ", str), input_validado("Ingrese año de creacion: ", int)
+                            equipo = Team(equipo_asociado, pais_orgien, año_creacion)
+                            equipo.agregar_empleado(empleado)
+                            equipos.append(equipo)
+                            print(f"\nEquipo {equipo_asociado} creado y {tiempo_empleado} agragado."); break
+                        else:
+                            print("Ingrese el nombre del equipo existente o cree uno nuevo."); break
+        elif opcion == 2: modelo, score, color = input("Ingrese modelo de auto: "), input_validado("Ingrese score: ", int), input("Ingrese color: "); autos.append(Car(modelo, score, color)); print("Auto creado correctamente")
+        elif opcion == 3: nombre, pais_orgien, year_creacion = input("Ingrese nombre del equipo: "), input_validado("Ingrese pais de orogien: ", str), input_validado("Ingrese año de creacion: ", int); equipos.append(Team(nombre, pais_orgien, year_creacion)); print("Equipo creado correctamente")
+        elif opcion == 4: simular_carrera(autos, equipos)
+        elif opcion == 5: ralizar_consultas(equipos)
+        elif opcion == 6: break
+        
+main()
